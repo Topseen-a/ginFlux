@@ -102,3 +102,50 @@ func DeleteTask(c *gin.Context) {
 	db.DB.Delete(&task)
 	c.JSON(http.StatusNoContent, nil)
 }
+
+func PatchTask(c *gin.Context) {
+	var task models.Task
+
+	if err := db.DB.First(&task, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "task not found",
+		})
+		return
+	}
+
+	var input models.PatchTaskInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	updates := map[string]interface{}{}
+
+	if input.Title != nil {
+		updates["title"] = *input.Title
+	}
+	if input.Description != nil {
+		updates["title"] = *input.Description
+	}
+	if input.Status != nil {
+		updates["status"] = *input.Status
+	}
+	if input.DueDate != nil {
+		updates["due_date"] = *input.DueDate
+	}
+
+	if err := db.DB.Model(&task).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	db.DB.First(&task, task.ID)
+	c.JSON(http.StatusOK, gin.H{
+		"data": task,
+	})
+}
