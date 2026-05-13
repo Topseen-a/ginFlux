@@ -60,7 +60,12 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	db.DB.Model(&task).Updates(input)
+	if err := db.DB.Model(&task).Updates(input).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	db.DB.First(&task, task.ID)
 	c.JSON(http.StatusOK, gin.H{"data": task})
 }
 
