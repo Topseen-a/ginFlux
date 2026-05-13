@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -17,21 +19,25 @@ type Task struct {
 	Title       string `json:"title" gorm:"not null"`
 	Description string `json:"description"`
 	Status      Status `json:"status" gorm:"default:pending"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 type CreateTaskInput struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 type UpdateTaskInput struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Status      Status `json:"status"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 type PatchTaskInput struct {
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
 	Status      *string `json:"status"`
+	DueDate	 *time.Time `json:"due_date"`
 }

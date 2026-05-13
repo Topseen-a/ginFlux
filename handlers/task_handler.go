@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"goGin/db"
 	"goGin/models"
 	"net/http"
@@ -11,16 +13,34 @@ import (
 func GetTasks(c *gin.Context) {
 	var tasks []models.Task
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
 	query := db.DB.Model(&models.Task{})
+
 	if status := c.Query("status"); status != "" {
 		query = query.Where("status = ?", status)
 	}
 
-	if err := query.Find(&tasks).Error; err != nil {
+	if err := query.Offset(offset).Limit(limit).Find(&tasks).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": tasks})
+
+	c.JSON(http.StatusOK, gin.H{
+		"page": page,
+		"limit": limit,
+		"data": tasks,
+	})
 }
 
 func CreateTask(c *gin.Context) {
@@ -30,7 +50,11 @@ func CreateTask(c *gin.Context) {
 		return
 	}
 
-	task := models.Task{Title: input.Title, Description: input.Description}
+	task := models.Task{
+		Title: input.Title, 
+		Description: input.Description, 
+		DueDate: input.DueDate,
+	}
 	if err := db.DB.Create(&task).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
