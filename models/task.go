@@ -16,6 +16,7 @@ const (
 
 type Task struct {
 	gorm.Model
+	UserID      uint   `json:"user_id" gorm:"not null"`
 	Title       string `json:"title" gorm:"not null"`
 	Description string `json:"description"`
 	Status      Status `json:"status" gorm:"default:pending"`
