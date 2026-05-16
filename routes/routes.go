@@ -14,6 +14,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		auth.POST("/register", handlers.RegisterUser)
 		auth.POST("/login", handlers.LoginUser)
+		auth.POST("/refresh", handlers.RefreshToken)
 	}
 	
 	tasks := api.Group("/tasks")

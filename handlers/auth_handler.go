@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"goGin/db"
@@ -64,4 +65,58 @@ func LoginUser(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"token": signed})
+}
+
+func RefreshToken(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "missing token",
+		})
+		return
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+	token, _ := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid token",
+		})
+		return
+	}
+
+	exp := int64(claims["exp"].(float64))
+	expiredAt := time.Unix(exp, 0)
+
+	if time.Since(expiredAt) > 7*24*time.Hour {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "token too old",
+		})
+		return
+	}
+
+	userID := uint(claims["sub"].(float64))
+
+	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	signed, err := newToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "could not generate token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": signed,
+	})
 }

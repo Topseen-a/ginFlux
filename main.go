@@ -3,6 +3,7 @@ package main
 import (
 	"goGin/config"
 	"goGin/db"
+	"goGin/middleware"
 	"goGin/routes"
 	"log"
 
@@ -18,7 +19,11 @@ func main() {
 	cfg := config.Load()
 	db.Connect(cfg)
 
-	r := gin.Default()
+	r := gin.New()
+	
+	r.Use(gin.Recovery())
+	r.Use(middleware.Logger)
+
 	routes.SetupRoutes(r)
 
 	r.Run(":" + cfg.Port)

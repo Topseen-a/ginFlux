@@ -101,8 +101,17 @@ func UpdateTask(c *gin.Context) {
 	}
 
 	var input models.UpdateTaskInput
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Status != "" &&
+		input.Status != models.StatusPending &&
+		input.Status != models.StatusInProgress &&
+		input.Status != models.StatusDone {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status value"})
 		return
 	}
 
@@ -186,4 +195,15 @@ func PatchTask(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": task,
 	})
+}
+
+func isValidStatus(status models.Status) bool {
+	switch status {
+		case models.StatusPending,
+			models.StatusInProgress,
+			models.StatusDone:
+			return true
+		default:
+			return false
+	}
 }
